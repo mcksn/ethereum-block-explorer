@@ -5,6 +5,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 function ReportingService() {
     const contractTxns = new Set();
     const newContractTxns = new Set();
+    const contractAddresses = new Set();
     const addressSender = new Set();
     const addressReceiver = new Set(); // bug, not stroing null values, which should is sometimes treated as zero address
     const txnEthers = new Array();
@@ -32,7 +33,6 @@ function ReportingService() {
         },
 
         contractTxnPercentage: function () {
-            const totalTxns = txns.length;
             return (contractTxns.size / txns.length) * 100;
         },
 
@@ -63,29 +63,32 @@ function ReportingService() {
             // console.log(txn)
             if (txn.to !== null && '0x' !== await web3.eth.getCode(txn.to)) { // to contracts
                 contractTxns.add(txn.hash);
+                contractAddresses.add(txn.to)
             }
 
             if ('0x' !== await web3.eth.getCode(txn.from)) {
                 contractTxns.add(txn.hash);
+                contractAddresses.add(txn.from)
             }
 
             if (0 !== txnValue) {
                 if (addressReceiverEtherMap.has(txn.to)) {
-                    addressReceiverEtherMap.set(txn.to, addressReceiverEtherMap.get(txn.to) + txnValue);
+                    addressReceiverEtherMap.get(txn.to).txnValue = addressReceiverEtherMap.get(txn.to).txnValue + txnValue;
                 } else {
-                    addressReceiverEtherMap.set(txn.to, txnValue);
+                    addressReceiverEtherMap.set(txn.to, {txnValue: txnValue, isContract:contractAddresses.has(txn.to)});
+                    console.log({txnValue: txnValue, txnTo:txn.to, contractAddresses:contractAddresses, isContract:contractAddresses.has(txn.to)})
                 }
                 if (addressSenderEtherMap.has(txn.from)) {
-                    addressSenderEtherMap.set(txn.from, addressSenderEtherMap.get(txn.from) + txnValue);
+                    addressSenderEtherMap.get(txn.from).txnValue = addressSenderEtherMap.get(txn.from).txnValue + txnValue;
                 } else {
-                    addressSenderEtherMap.set(txn.from, txnValue);
+                    addressSenderEtherMap.set(txn.from, {txnValue: txnValue, isContract:contractAddresses.has(txn.from)});
                 }
             }
 
             addressSender.add(txn.from);
             addressReceiver.add(txn.to);
 
-            txnEthers.push(parseInt(txn.value, '10'));
+            txnEthers.push(txnValue);
 
         }
     }

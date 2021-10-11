@@ -79,6 +79,10 @@ describe('Reporting Service', () => {
         assert.equal(reportingService.uniqueAddressReceivedTxnsCount(), 2); 
         assert.equal(reportingService.contractsCreatedCount(), 1);
         assert.equal(reportingService.contractTxnPercentage(), 100);
+        assert.equal(reportingService.addressReceivedEtherTotals().length, 1 )
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressReceivedEtherTotals(), 1000000000000000, true))
+        assert.equal(reportingService.addressSentEtherTotals().length, 1 )
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 1000000000000000, false))
 
     });
 
@@ -95,10 +99,10 @@ describe('Reporting Service', () => {
         assert.equal(reportingService.contractsCreatedCount(), 1);
         assert.equal(reportingService.contractTxnPercentage(), 33.33333333333333);
         assert.equal(reportingService.addressReceivedEtherTotals().length, 1 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressReceivedEtherTotals(), 3000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressReceivedEtherTotals(), 3000000000000000, false))
         assert.equal(reportingService.addressSentEtherTotals().length, 2 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressSentEtherTotals(), 2000000000000000))
-        assert.ok(entriesHasEtherTotal(reportingService.addressSentEtherTotals(), 1000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 2000000000000000, false))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 1000000000000000, false))
 
     });
 
@@ -115,9 +119,9 @@ describe('Reporting Service', () => {
         assert.equal(reportingService.contractsCreatedCount(), 1);
         assert.equal(reportingService.contractTxnPercentage(), 33.33333333333333);
         assert.equal(reportingService.addressReceivedEtherTotals().length, 1 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressReceivedEtherTotals(), 3000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressReceivedEtherTotals(), 3000000000000000, false))
         assert.equal(reportingService.addressSentEtherTotals().length, 1 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressSentEtherTotals(), 3000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 3000000000000000, false))
 
     });
 
@@ -134,11 +138,11 @@ describe('Reporting Service', () => {
         assert.equal(reportingService.contractsCreatedCount(), 1);
         assert.equal(reportingService.contractTxnPercentage(), 33.33333333333333);
         assert.equal(reportingService.addressReceivedEtherTotals().length, 2 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressReceivedEtherTotals(), 2000000000000000))
-        assert.ok(entriesHasEtherTotal(reportingService.addressReceivedEtherTotals(), 1000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressReceivedEtherTotals(), 2000000000000000, false))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressReceivedEtherTotals(), 1000000000000000, false))
         assert.equal(reportingService.addressSentEtherTotals().length, 2 )
-        assert.ok(entriesHasEtherTotal(reportingService.addressSentEtherTotals(), 2000000000000000))
-        assert.ok(entriesHasEtherTotal(reportingService.addressSentEtherTotals(), 1000000000000000))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 2000000000000000, false))
+        assert.ok(entriesHasEtherTotalAndIsContract(reportingService.addressSentEtherTotals(), 1000000000000000, false))
     });
     
 });
@@ -178,6 +182,6 @@ const sendTxnWithAddress = async (accountNumberFrom, value, addressTo) => {
     })
 };
 
-function entriesHasEtherTotal(entries, value) {
-    return new Set([...entries.map(f => f[1])]).has(value)
+function entriesHasEtherTotalAndIsContract(entries, value, isContract) {
+    return  [...entries.map(f =>  f[1])].filter(d => d.txnValue === value && d.isContract === isContract).length === 1
 }
