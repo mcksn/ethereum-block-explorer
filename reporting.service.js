@@ -1,22 +1,18 @@
-const reducer = (previousValue, currentValue) => previousValue + currentValue;
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
-
 function ReportingService() {
     const contractTxns = new Set();
     const newContractTxns = new Set();
     const contractAddresses = new Set();
     const addressSender = new Set();
-    const addressReceiver = new Set(); // bug, not stroing null values, which should is sometimes treated as zero address
+    const addressReceiver = new Set();
     const txnEthers = new Array();
     const addressReceiverEtherMap = new Map();
     const addressSenderEtherMap = new Map();
     const txns = new Array();
+
     return {
         init: async function (web3, blockStart, blockEnd) {
             for (i = blockStart; i <= (blockEnd || await web3.eth.getBlockNumber()); i++) {
-                console.debug(`BLOCK:${i} ::::::::::`)
-                await store(web3, await findTransactions(web3, i));
+                await aggregate(web3, await findTransactions(web3, i));
             }
         },
 
@@ -50,18 +46,18 @@ function ReportingService() {
         }
     };
 
-    async function store(web3, _txns) {
+    /* aggregate transactions and append to existing data structures ready for reporting*/
+    async function aggregate(web3, _txns) {
         for (let txn of _txns) {
             txns.push(txn);
-            let txnValue = parseInt(txn.value, '10');
+            let txnValue = weiToEther(web3, txn.value);
 
             if (txn.to === null && (await web3.eth.getTransactionReceipt(txn.hash)).contractAddress !== null) {
                 newContractTxns.add(txn.hash);
                 contractTxns.add(txn.hash);
             }
 
-            // console.log(txn)
-            if (txn.to !== null && '0x' !== await web3.eth.getCode(txn.to)) { // to contracts
+            if (txn.to !== null && '0x' !== await web3.eth.getCode(txn.to)) {
                 contractTxns.add(txn.hash);
                 contractAddresses.add(txn.to)
             }
@@ -76,7 +72,6 @@ function ReportingService() {
                     addressReceiverEtherMap.get(txn.to).txnValue = addressReceiverEtherMap.get(txn.to).txnValue + txnValue;
                 } else {
                     addressReceiverEtherMap.set(txn.to, {txnValue: txnValue, isContract:contractAddresses.has(txn.to)});
-                    console.log({txnValue: txnValue, txnTo:txn.to, contractAddresses:contractAddresses, isContract:contractAddresses.has(txn.to)})
                 }
                 if (addressSenderEtherMap.has(txn.from)) {
                     addressSenderEtherMap.get(txn.from).txnValue = addressSenderEtherMap.get(txn.from).txnValue + txnValue;
@@ -97,6 +92,9 @@ function ReportingService() {
             .then(block => block.transactions)
     };
 
+    function weiToEther(web3, wei) {
+        return Number(web3.utils.fromWei(wei, "ether"))
+    }
 }
 
 function add(accumulator, a) {
